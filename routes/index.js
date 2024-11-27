@@ -6,6 +6,20 @@ const isAuthenticated = require('../middleware/isAuth_middleware');
 
 
  
+
+
+
+
+
+
+
+// Health Route for ECR and ECS
+router.get('/healthcheck' , MainControler.healthchecker);
+
+
+
+
+
  router.get('/home' , MainControler.main);
 
 
