@@ -135,7 +135,7 @@ const privated = process.env.SECRET_KEY;
 
 module.exports.HandleSignin = async (req, res) => {
     try {    
-        console.log(req.body);
+        console.log("This is body " ,req.body);
             
         const user = await User.findOne({ email: req.body.email });
         if (!user) {
