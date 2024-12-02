@@ -111,6 +111,7 @@ app.use(helmet());
 // };
 
 app.use(cors({origin:'*'})); // Apply the CORS middleware
+console.log(origin);
 
 // Routes
 app.use('/api', require('./routes'));
