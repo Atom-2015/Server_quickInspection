@@ -112,11 +112,12 @@ app.use(helmet());
 
 app.use(cors({origin:'*'})); // Apply the CORS middleware
 
+
 // Routes
 app.use('/api', require('./routes'));
 
 // Server setup
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0",() => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
