@@ -94,7 +94,7 @@ router.delete('/deleteshape' , isAuthenticated ,  ReportControler.HandleDeleteSh
 router.put('/updateissue' , isAuthenticated , ReportControler.HandleUpdateImageIssue);
 
 // API to to store Shape of Fast Inspaction 
-router.post('/storefastInspaction' , isAuthenticated , ReportControler.HandleFastInspaction);
+router.post('/storefastInspaction'  , ReportControler.HandleFastInspaction);
 
 
 

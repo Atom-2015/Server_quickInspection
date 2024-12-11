@@ -1022,11 +1022,9 @@ module.exports.HandleFastInspaction = async (req, res) => {
       message: "Enter valid data for Shape"
     });
   } 
-  const isValidShapes = req.body.fastInspaction.every((shapeArray) =>
-    Array.isArray(shapeArray) && shapeArray.every(
-      (shape) => shape.x !== undefined && shape.y !== undefined && shape.width === 50 && shape.height === 50
-    )
-  );
+  const isValidShapes = req.body.fastInspaction.every((shape) =>
+    shape.x !== undefined && shape.y !== undefined && shape.width === 50 && shape.height === 50
+  );  
 
   if (!isValidShapes) {
     return res.status(400).json({
