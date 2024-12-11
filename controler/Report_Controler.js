@@ -136,12 +136,12 @@ module.exports.Handlecludinaryupload = async (req, res) => {
   // return res.status(200)
   const reportid = req.headers['x-report-id'];
   const companyId = req.headers['x-company_id'];
-  // console.log('Request Body:', req.body); // Log to verify latitude and longitude
+  console.log('Request Body:', req.body); // Log to verify latitude and longitude
 
-  // console.log('Report ID:', reportid);
-  // console.log('Company ID:', companyId);
+  console.log('Report ID:', reportid);
+  console.log('Company ID:', companyId);
 
-  if (!reportid || !companyId) {
+  if (!reportid || !companyId) { 
     return res.status(400).json({
       message: "Report Id or Company Id not provided"
     });

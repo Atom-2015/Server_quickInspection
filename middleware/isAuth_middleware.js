@@ -7,12 +7,15 @@ const isAuthenticated= async(req ,res,next)=>{
     
     if(!token ){
         return res.status(401).send({message:'No token provided'});
+        
     }
     try {
-        const decode = jwt.verify(token , process.env.SECRET_KEY);
-        req.user = decode;
+        console.log(token)
+        const decode = await jwt.verify(token , process.env.SECRET_KEY);
+        req.user = decode; 
         next();    
     } catch (error) {
+        console.log(error , "token error")
         return res.status(403).json({message:'Not a valed  token'});
 
     }         

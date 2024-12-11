@@ -21,7 +21,12 @@ router.get('/listing', isAuthenticated, ReportControler.GetReport);
 router.get('/imagecount' , isAuthenticated, ReportControler.Imagecontroler);
 
 //Add image in report
-router.post('/addimage', isAuthenticated, upload, ReportControler.Handlecludinaryupload);
+router.post('/addimage', upload, ReportControler.Handlecludinaryupload);
+// router.post('/addimage' , (req , res)=>{
+//     return res.status(200).json({
+//         message:"hello"
+//     })
+// })
 
 
 // *******Router for all images on cloudinary **********
