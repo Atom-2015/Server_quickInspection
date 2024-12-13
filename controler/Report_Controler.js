@@ -131,24 +131,201 @@ module.exports.Imagecontroler = async (req, res) => {
 
 
 // Image upload Post api
+// module.exports.Handlecludinaryupload = async (req, res) => {
+//   // console.log(req.files.length);
+//   // return res.status(200)
+//   const reportid = req.headers['x-report-id'];
+//   const companyId = req.headers['x-company_id'];
+//   console.log('Request Body:', req.body); // Log to verify latitude and longitude
+
+//   console.log('Report ID:', reportid);
+//   console.log('Company ID:', companyId);
+
+//   if (!reportid || !companyId) { 
+//     return res.status(400).json({
+//       message: "Report Id or Company Id not provided"
+//     });
+//   }
+
+//   let uploadedImages = []; // Array to store Cloudinary image URLs
+//   let newImageProcessedDocs = []; // Array to store new ImageProcessed documents
+
+//   try {
+//     const report = await Report.findById(reportid);
+//     if (!report) {
+//       return res.status(400).json({
+//         message: "Report not found"
+//       });
+//     }
+
+//     // Check if files are uploaded
+//     if (!req.files || req.files.length === 0) {
+//       return res.status(400).json({
+//         message: "No images uploaded, please try again"
+//       });
+//     }
+
+//     // Get current date for month and year
+//     const currentDate = new Date();
+//     const currentMonth = currentDate.getMonth(); // Returns 0 for January
+//     const currentYear = currentDate.getFullYear();
+//     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+//     const monthName = months[currentMonth];  // Correctly map the current month to a name
+
+//     // Process each image file
+//     for (const file of req.files) {
+//       const reportimagelocalpath = file.path;
+//       console.log('Image Local Path:', reportimagelocalpath);
+
+//       // Upload image to Cloudinary
+//       const reportimage = await uploadOnCloudinary(reportimagelocalpath);
+//       if (!reportimage) {
+//         return res.status(400).json({
+//           message: "Failed to upload image to Cloudinary"
+//         });
+//       }
+
+//       uploadedImages.push(reportimage.url); // Save Cloudinary URL
+//       const latitudeKey = 'latitude_0';
+//       const longitudeKey = 'longitude_0';
+
+//       const latitude = req.body[latitudeKey] && !isNaN(req.body[latitudeKey])
+//         ? mongoose.Types.Decimal128.fromString(String(req.body[latitudeKey]))
+//         : null;
+
+//       const longitude = req.body[longitudeKey] && !isNaN(req.body[longitudeKey])
+//         ? mongoose.Types.Decimal128.fromString(String(req.body[longitudeKey]))
+//         : null;
+
+//       // Log to verify correct values are being parsed
+//       console.log('Parsed Latitude:', latitude);
+//       console.log('Parsed Longitude:', longitude);
+
+//       // Create new ImageProcessed document
+//       const newImageProcessed = new ImageProcessed({
+//         companyid: companyId,
+//         image: reportimage.url,
+//         latitude: latitude,
+//         longitude: longitude,
+//         month: monthName,
+//         year: currentYear,
+//         reportid: reportid,
+//         imagelink: reportimage.url
+//       });
+
+//       await newImageProcessed.save();
+//       newImageProcessedDocs.push(newImageProcessed._id);
+
+//       // Update Report
+//       report.image_on_cloudanary_uri.push(reportimage.url); // Add Cloudinary URL to report
+//       report.image.push(newImageProcessed._id); // Add ImageProcessed reference
+//       report.totalImagesProcessed = (report.totalImagesProcessed || 0) + 1;
+
+//       // Delete the local image file after successful upload
+//       fs.unlink(reportimagelocalpath, (err) => {
+//         if (err) {
+//           console.error(`Error removing file at ${reportimagelocalpath}:`, err);
+//         } else {
+//           console.log(`Successfully removed local file at ${reportimagelocalpath}`);
+//         }
+//       });
+//     }
+
+//     await report.save();
+
+//     // Update or create ImageCount for the current month/year
+//     let imageCount = await ImageCount.findOne({ companyid: companyId, month: monthName, year: currentYear });
+
+//     if (!imageCount) {
+//       // Create a new entry if none exists
+//       imageCount = new ImageCount({
+//         companyid: companyId,
+//         month: monthName,
+//         year: currentYear,
+//         totalImagesProcessed: req.files.length
+//       });
+//     } else {
+//       // Increment the count if an entry already exists
+//       imageCount.totalImagesProcessed += req.files.length;
+//     }
+
+//     await imageCount.save();
+
+//     return res.status(200).json({
+//       status: 200,
+//       message: "Images uploaded, report updated, and image count recorded successfully",
+//       cloudinaryUrls: uploadedImages,
+//       totalImagesProcessed: report.totalImagesProcessed
+//     });
+
+//   } catch (error) {
+//     console.error("Error while uploading images:", error);
+
+//     // Delete images from Cloudinary if error occurs
+//     for (const image of uploadedImages) {
+//       const publicId = extractPublicIdFromUrl(image);
+//       if (publicId) {
+//         await cloudinary.uploader.destroy(publicId);
+//       }
+//     }
+
+//     return res.status(500).json({
+//       status: 500,
+//       message: 'Internal server error'
+//     });
+//   }
+// };
+
+
+
+const multer = require('multer');
+const storage = multer.memoryStorage(); // Store files in memory (not on disk)
+const upload = multer({ storage: storage }).array('images'); // Use 'images' to match the frontend field name
+
+
+// Function to upload file directly to Cloudinary
+const uploadFileToCloudinary = async (buffer, fileName) => {
+  try {
+    if (!buffer) return null;
+
+    // Upload file to Cloudinary using buffer (from memory)
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'auto', // Automatically detect file type (image, video, etc.)
+          public_id: `uploads/${fileName}`, // Optionally specify a custom public ID
+        },
+        (error, result) => {
+          if (error) {
+            console.error('Error uploading to Cloudinary:', error);
+            reject(error);
+          }
+          resolve(result);
+        }
+      ).end(buffer); // Send the buffer directly to Cloudinary
+    });
+  } catch (error) {
+    console.log('Error during Cloudinary upload:', error);
+    return null;
+  }
+};
+
 module.exports.Handlecludinaryupload = async (req, res) => {
-  // console.log(req.files.length);
-  // return res.status(200)
   const reportid = req.headers['x-report-id'];
   const companyId = req.headers['x-company_id'];
-  console.log('Request Body:', req.body); // Log to verify latitude and longitude
 
   console.log('Report ID:', reportid);
   console.log('Company ID:', companyId);
+  console.log('Request Body:', req.body);
 
-  if (!reportid || !companyId) { 
+  if (!reportid || !companyId) {
     return res.status(400).json({
       message: "Report Id or Company Id not provided"
     });
   }
 
-  let uploadedImages = []; // Array to store Cloudinary image URLs
-  let newImageProcessedDocs = []; // Array to store new ImageProcessed documents
+  let uploadedImages = [];
+  let newImageProcessedDocs = [];
 
   try {
     const report = await Report.findById(reportid);
@@ -165,87 +342,65 @@ module.exports.Handlecludinaryupload = async (req, res) => {
       });
     }
 
-    // Get current date for month and year
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth(); // Returns 0 for January
-    const currentYear = currentDate.getFullYear();
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const monthName = months[currentMonth];  // Correctly map the current month to a name
+    // Get latitude and longitude from request body
+    const latitudeKey = 'latitude_0';
+    const longitudeKey = 'longitude_0';
 
-    // Process each image file
+    const latitude = req.body[latitudeKey] && !isNaN(req.body[latitudeKey])
+      ? mongoose.Types.Decimal128.fromString(String(req.body[latitudeKey]))
+      : null;
+
+    const longitude = req.body[longitudeKey] && !isNaN(req.body[longitudeKey])
+      ? mongoose.Types.Decimal128.fromString(String(req.body[longitudeKey]))
+      : null;
+
+    // Log to verify correct values are being parsed
+    console.log('Parsed Latitude:', latitude);
+    console.log('Parsed Longitude:', longitude);
+
+    // Loop through files and upload to Cloudinary
     for (const file of req.files) {
-      const reportimagelocalpath = file.path;
-      console.log('Image Local Path:', reportimagelocalpath);
-
-      // Upload image to Cloudinary
-      const reportimage = await uploadOnCloudinary(reportimagelocalpath);
-      if (!reportimage) {
+      const cloudinaryResult = await uploadOnCloudinary(file.buffer, file.originalname);
+      
+      if (!cloudinaryResult) {
         return res.status(400).json({
           message: "Failed to upload image to Cloudinary"
         });
       }
 
-      uploadedImages.push(reportimage.url); // Save Cloudinary URL
-      const latitudeKey = 'latitude_0';
-      const longitudeKey = 'longitude_0';
+      uploadedImages.push(cloudinaryResult.url);
 
-      const latitude = req.body[latitudeKey] && !isNaN(req.body[latitudeKey])
-        ? mongoose.Types.Decimal128.fromString(String(req.body[latitudeKey]))
-        : null;
-
-      const longitude = req.body[longitudeKey] && !isNaN(req.body[longitudeKey])
-        ? mongoose.Types.Decimal128.fromString(String(req.body[longitudeKey]))
-        : null;
-
-      // Log to verify correct values are being parsed
-      console.log('Parsed Latitude:', latitude);
-      console.log('Parsed Longitude:', longitude);
-
-      // Create new ImageProcessed document
       const newImageProcessed = new ImageProcessed({
         companyid: companyId,
-        image: reportimage.url,
+        image: cloudinaryResult.url,
         latitude: latitude,
         longitude: longitude,
-        month: monthName,
-        year: currentYear,
+        month: new Date().toLocaleString('default', { month: 'long' }),
+        year: new Date().getFullYear(),
         reportid: reportid,
-        imagelink: reportimage.url
+        imagelink: cloudinaryResult.url
       });
 
       await newImageProcessed.save();
       newImageProcessedDocs.push(newImageProcessed._id);
 
-      // Update Report
-      report.image_on_cloudanary_uri.push(reportimage.url); // Add Cloudinary URL to report
-      report.image.push(newImageProcessed._id); // Add ImageProcessed reference
+      report.image_on_cloudanary_uri.push(cloudinaryResult.url);
+      report.image.push(newImageProcessed._id);
       report.totalImagesProcessed = (report.totalImagesProcessed || 0) + 1;
-
-      // Delete the local image file after successful upload
-      fs.unlink(reportimagelocalpath, (err) => {
-        if (err) {
-          console.error(`Error removing file at ${reportimagelocalpath}:`, err);
-        } else {
-          console.log(`Successfully removed local file at ${reportimagelocalpath}`);
-        }
-      });
     }
 
     await report.save();
 
-    // Update or create ImageCount for the current month/year
-    let imageCount = await ImageCount.findOne({ companyid: companyId, month: monthName, year: currentYear });
+    let imageCount = await ImageCount.findOne({ companyid: companyId, month: new Date().toLocaleString('default', { month: 'long' }), year: new Date().getFullYear() });
 
     if (!imageCount) {
-      // Create a new entry if none exists
       imageCount = new ImageCount({
         companyid: companyId,
-        month: monthName,
-        year: currentYear,
+        month: new Date().toLocaleString('default', { month: 'long' }),
+        year: new Date().getFullYear(),
         totalImagesProcessed: req.files.length
       });
     } else {
-      // Increment the count if an entry already exists
       imageCount.totalImagesProcessed += req.files.length;
     }
 
@@ -275,6 +430,127 @@ module.exports.Handlecludinaryupload = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+
+module.exports.HandleuploadImage = async (req, res) => {
+  const reportid = req.headers['x-report-id'];
+  const companyId = req.headers['x-company_id'];
+  const userid = req.headers['x-auth-token'];
+
+  if (!reportid || !companyId) {
+    return res.status(400).json({
+      message: "Report Id or Company Id not provided"
+    });
+  }
+
+  console.log(req.body)
+
+  if (!req.body.images || !Array.isArray(req.body.images) || req.body.images.length === 0) {
+    return res.status(400).json({ 
+      message: 'No images provided in the request' 
+    });
+  }
+
+  try {
+    const report = await Report.findById(reportid);
+    if (!report) {
+      return res.status(400).json({
+        message: "Report not found"
+      });
+    }
+
+    let uploadedImages = [];
+
+    // let images = req.body;
+ 
+    for (let i = 0; i <  req.body.images.length; i++) {
+      const { url, latitude, longitude } =  req.body.images[i];
+
+      if (!url) {
+        return res.status(400).json({
+          message: `Missing URL for image at index ${i}`
+        });
+      }
+
+      const lat = latitude && !isNaN(latitude)
+        ? mongoose.Types.Decimal128.fromString(String(latitude))
+        : null;
+
+      const long = longitude && !isNaN(longitude)
+        ? mongoose.Types.Decimal128.fromString(String(longitude))
+        : null;
+
+      const newImageProcessed = new ImageProcessed({
+        companyid: companyId,
+        image: url,
+        latitude: lat ,
+        longitude: long ,
+        month: new Date().toLocaleString('default', { month: 'long' }),
+        year: new Date().getFullYear(),
+        reportid: reportid,
+        imagelink: url
+      });
+
+      await newImageProcessed.save();
+
+      uploadedImages.push({
+        url,
+        latitude: lat,
+        longitude: long
+      });
+
+      report.image_on_cloudanary_uri.push(url);
+      report.image.push(newImageProcessed._id);
+      report.totalImagesProcessed = (report.totalImagesProcessed || 0) + 1;
+    }
+
+    await report.save();
+
+    let imageCount = await ImageCount.findOne({
+      companyid: companyId,
+      month: new Date().toLocaleString('default', { month: 'long' }),
+      year: new Date().getFullYear()
+    });
+
+    if (!imageCount) {
+      imageCount = new ImageCount({
+        companyid: companyId,
+        month: new Date().toLocaleString('default', { month: 'long' }),
+        year: new Date().getFullYear(),
+        totalImagesProcessed: req.body.images.length
+      });
+    } else {
+      imageCount.totalImagesProcessed += req.body.images.length;
+    }
+
+    await imageCount.save();
+
+    return res.status(200).json({
+      status: 200,
+      message: "Images uploaded, report updated, and image count recorded successfully",
+      cloudinaryUrls: uploadedImages, // Array of uploaded images with metadata
+      totalImagesProcessed: report.totalImagesProcessed
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+};
+
+
+
+
+
+
+
 
 
 // ******** Api to retrive image uri of cloudinary ************* //

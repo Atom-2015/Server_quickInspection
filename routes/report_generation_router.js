@@ -21,12 +21,20 @@ router.get('/listing', isAuthenticated, ReportControler.GetReport);
 router.get('/imagecount' , isAuthenticated, ReportControler.Imagecontroler);
 
 //Add image in report
-router.post('/addimage', upload, ReportControler.Handlecludinaryupload);
+// router.post('/addimage', upload, ReportControler.Handlecludinaryupload);
+
+router.post('/addimage', ReportControler.HandleuploadImage);
+
 // router.post('/addimage' , (req , res)=>{
 //     return res.status(200).json({
 //         message:"hello"
 //     })
 // })
+
+// router.post('/upload', upload.array('files'), async (req, res) => {
+//     console.log(req.files); // Should now contain files
+//     // Handle the upload logic here
+//   });
 
 
 // *******Router for all images on cloudinary **********
