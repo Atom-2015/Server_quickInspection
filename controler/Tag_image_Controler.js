@@ -86,8 +86,6 @@ module.exports.HandleAddIssue = async (req, res) => {
 };
 
 
-
-
 // Api to get the data of Perticular report
 module.exports.HandleAllTagdata = async (req, res) => {
     // console.log(req.headers['x-tagimage-id']);
@@ -129,7 +127,6 @@ module.exports.HanadleTagStore = async (req, res) => {
     }
 
     const { imageid, tags } = req.body;
-
     if (!Array.isArray(imageid) || !Array.isArray(tags) || imageid.length === 0 || tags.length === 0) {
         return res.status(401).json({
             message: "Please Enter valid Data"
@@ -138,9 +135,9 @@ module.exports.HanadleTagStore = async (req, res) => {
 
     try {
         const response = await Promise.all(
-            imageid.map(async (id) => 
+            imageid.map(async (id) =>
                 ImageProcessed.findByIdAndUpdate(
-                    id, 
+                    id,
                     { $set: { tags: tags } },
                     { new: true }
                 )
@@ -165,3 +162,55 @@ module.exports.HanadleTagStore = async (req, res) => {
         });
     }
 };
+
+
+
+ 
+
+module.exports.HandleRemoveTags = async (req, res) => {
+  
+    console.log(`The data from UI for tag removal and image id is ${req.body}`);
+    
+    if (!req.headers['x-report-id']) {
+        return res.status(403).json({
+            message: "Report Id is Required"
+        });
+    }
+
+    const { imageid, tags } = req.body;
+    if (!Array.isArray(imageid) || !Array.isArray(tags) || imageid.length === 0 || tags.length === 0) {
+        return res.status(401).json({
+            message: "Please Enter valid Data"
+        });
+    }
+
+    try {
+        const response = await Promise.all(
+            imageid.map(async (id) =>
+                ImageProcessed.findByIdAndUpdate(
+                    id,
+                    { $pull: { tags: { $in: tags } } },  // Remove specific tags from the 'tags' array
+                    { new: true }
+                )
+            )
+        );
+
+        if (response.some(item => !item)) {
+            return res.status(404).json({
+                message: "Some Images Not Found"
+            });
+        }
+
+        return res.status(200).json({
+            message: "Tags Removed Successfully",
+            data: response
+        });
+
+    } catch (error) {
+        console.error("Error Found:", error);
+        return res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+};
+

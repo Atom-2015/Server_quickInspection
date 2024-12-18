@@ -16,5 +16,9 @@ router.post('/createcompany' , isAuthenticated , CreateCompany.HandleCompanyCrea
 router.get('/companylist' , isAuthenticated , CreateCompany.CompanyList);
 
 
+// ************** Delete Company api ************
+router.delete('/deletecompany'  , CreateCompany.deleteCompany)
+
+
 
 module.exports = router; 

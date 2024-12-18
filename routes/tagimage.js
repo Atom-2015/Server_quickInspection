@@ -16,5 +16,8 @@ router.get('/getalltags', isAuthenticated, TagImage.HandleAllTagdata);
 //Api to Add tags with perticular image array
 router.post('/addtagwithimage', isAuthenticated, TagImage.HanadleTagStore);
 
+// Api to unassign the tags of Array of immmage 
+router.post('/unassign'  , TagImage.HandleRemoveTags);
+
 
 module.exports = router;
