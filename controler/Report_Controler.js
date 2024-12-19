@@ -278,12 +278,11 @@ module.exports.Imagecontroler = async (req, res) => {
 
 
 
-const multer = require('multer');
-const storage = multer.memoryStorage(); // Store files in memory (not on disk)
-const upload = multer({ storage: storage }).array('images'); // Use 'images' to match the frontend field name
+ 
 
 
 // Function to upload file directly to Cloudinary
+
 const uploadFileToCloudinary = async (buffer, fileName) => {
   try {
     if (!buffer) return null;
@@ -606,6 +605,7 @@ module.exports.HandleUpdatingCloudinaryImage = async (req, res) => {
     // Update shape based on type
     if (shapename === 'rectangle' && shapeData) {
       response.rectangles.push({
+        issue:issue_type,
         x: shapeData.x,
         y: shapeData.y,
         width: shapeData.width,
@@ -1305,7 +1305,76 @@ module.exports.HandleDeleteImage = async (req, res) => {
 
 
 
+module.exports.HandleAiData = async (req, res) => {
+  // Validate headers
+  if (!req.headers['reportId'] || !req.headers['imageId']) {
+    return res.status(400).json({ message: "Missing reportId or imageId in headers" });
+  }
 
+  const { inspection_name, category, rectangles } = req.body;
+
+  // Validate required fields in the request body
+  if ([inspection_name, category].some(field => field?.trim() === "")) {
+    return res.status(400).json({
+      message: "Please provide full information"
+    });
+  }
+
+  if (!rectangles || !Array.isArray(rectangles)) {
+    return res.status(400).json({ 
+      message: 'No Data set Provided' 
+    });
+  }
+
+  try {
+    // Fetch or create the Shapes document based on the reportId and imageProcessedId
+    let response = await Shapes.findOne({
+      reportId: req.headers['reportId'],
+      imageProcessedid: req.headers['imageId']
+    });
+
+    if (!response) {
+      // Create a new Shapes document if not found
+      response = new Shapes({
+        reportId: req.headers['reportId'],
+        imageProcessedid: req.headers['imageId'],
+        inspection_name: inspection_name,
+        category: category,
+        rectangles: []
+      });
+    }
+
+    // Add the rectangles data to the response
+    rectangles.forEach(shapeData => {
+      response.rectangles.push({
+        class: shapeData.class || "unknown",  // Default to 'unknown' if class is missing
+        x: shapeData.x,
+        y: shapeData.y,
+        width: shapeData.width,
+        height: shapeData.height
+      });
+    });
+
+    // Save the updated shape document
+    await response.save();
+
+    // Return the response in the requested JSON format
+    return res.status(200).json({
+      "_id": response._id,
+      "reportId": response.reportId,
+      "imageProcessedId": response.imageProcessedid,
+      "inspection_name": response.inspection_name,
+      "category": response.category,
+      "image_name": response.image_name || "Not Provided", // Assuming image_name is optional
+      "rectangles": response.rectangles,
+      "createdAt": response.createdAt,
+      "updatedAt": response.updatedAt
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 
 

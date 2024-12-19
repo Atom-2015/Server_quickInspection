@@ -109,6 +109,10 @@ router.post('/storefastInspaction'  , ReportControler.HandleFastInspaction);
 router.delete('/deleteImage' , isAuthenticated , ReportControler.HandleDeleteImage);
 
 
+// Api to get AI Gerated Data
+router.post('/Aidata' , ReportControler.HandleAiData)
+
+
 
 
 

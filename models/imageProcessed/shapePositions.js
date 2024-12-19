@@ -12,6 +12,7 @@ const ShapesPositionSchema = new mongoose.Schema({
   },
   rectangles: [
     {
+      issue:{type:String },
       x: { type: Number, required: true },  // Starting x position
       y: { type: Number, required: true },  // Starting y position
       width: { type: Number, required: true },
@@ -20,8 +21,9 @@ const ShapesPositionSchema = new mongoose.Schema({
   ],
   polygons: [
     {
-      points: [
+      issue: [
         {
+          class:{type:String},
           x: { type: Number, required: true },
           y: { type: Number, required: true }
         }
