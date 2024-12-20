@@ -15,8 +15,8 @@ const fastInspactionSchema = new mongoose.Schema({
         {
             x: { type: Number, required: true },
             y: { type: Number, required: true },
-            width: { type: Number, enum:50  , require:true},
-            height: { type: Number, enum:50 , require:true},
+            width: { type: Number, enum:6  , require:true},
+            height: { type: Number, enum:6 , require:true},
           }
     ]
 },{ timestamps: true });

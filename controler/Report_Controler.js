@@ -1179,7 +1179,7 @@ module.exports.HandleFastInspaction = async (req, res) => {
     });
   } 
   const isValidShapes = req.body.fastInspaction.every((shape) =>
-    shape.x !== undefined && shape.y !== undefined && shape.width === 50 && shape.height === 50
+    shape.x !== undefined && shape.y !== undefined && shape.width === 6 && shape.height === 6
   );  
 
   if (!isValidShapes) {
